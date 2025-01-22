@@ -1,4 +1,4 @@
-import Editor from "./Editor";
+import Monaco from "./Monaco";
 import "./App.css";
 import { useMemo } from "react";
 import * as monaco from "monaco-editor";
@@ -18,7 +18,7 @@ function App() {
         <header className="App-header">
           <h1>Monaco Editor</h1>
         </header>
-        <Editor style={{ height: "500px", width: "950px" }} options={options} />
+        <Monaco style={{ height: "500px", width: "800px" }} options={options} />
       </div>
     </>
   );
