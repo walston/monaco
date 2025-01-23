@@ -14,7 +14,9 @@ function App() {
         <header className="App-header">
           <h1>Monaco Editor</h1>
         </header>
-        <div style={{ display: "flex", alignItems: "baseline" }}>
+        <div
+          style={{ display: "flex", alignItems: "stretch", margin: "0.5em 0" }}
+        >
           <input
             id="lock"
             type="checkbox"
@@ -27,6 +29,8 @@ function App() {
           >
             Read only
           </label>
+
+          <button onClick={() => setText("hello\nreset")}>Reset</button>
         </div>
         {lock ? (
           <textarea

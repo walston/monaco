@@ -51,6 +51,14 @@ export default function Monaco({
   }, [ref]);
 
   useEffect(() => {
+    const model = editor.current?.getModel() ?? null;
+    if (!model) return;
+    if (value === undefined) return;
+    if (value !== (model as monaco.editor.ITextModel).getValue())
+      (model as monaco.editor.ITextModel).setValue(value);
+  }, [value]);
+
+  useEffect(() => {
     if (element.current) {
       const el = element.current;
       const ed = monaco.editor.create(el, { ...options, value });
