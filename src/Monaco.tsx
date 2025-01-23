@@ -1,5 +1,12 @@
 import * as monaco from "monaco-editor";
-import { HTMLProps, PropsWithRef, useEffect, useRef } from "react";
+import {
+  HTMLProps,
+  PropsWithRef,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 monaco.editor.createWebWorker({
   moduleId: "monaco-web-worker",
@@ -36,31 +43,25 @@ export default function Monaco({
   value,
   ...props
 }: Props) {
-  const elementRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<monaco.editor.IEditor | null>(null);
+  const [editor, setEditor] = useState<monaco.editor.IEditor | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    controller.signal.addEventListener("abort", () => {
-      if (!editorRef.current) return;
-      editorRef.current.dispose();
-    });
+    if (!editor) return;
+    return () => editor.dispose();
+  }, [editor]);
 
-    if (elementRef.current) {
-      const el = elementRef.current;
-      const ed = monaco.editor.create(el, { ...options, value });
-      const model = ed.getModel()!;
-      editorRef.current = ed;
-
-      model.onDidChangeContent(() => {
-        const next = model.getValue();
-        if (next !== value) onChange?.(next);
-      });
-    }
-
-    return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const refHandler = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (!el) return;
+      const editor = monaco.editor.create(el, { ...options, value });
+      const model = editor.getModel()!;
+      model.onDidChangeContent(() =>
+        onChange ? onChange(model.getValue()) : null
+      );
+      setEditor(editor);
+    },
+    [onChange, options, value]
+  );
 
   return (
     <div {...props}>
@@ -68,7 +69,7 @@ export default function Monaco({
         role="textbox"
         id="editor"
         style={{ height: "100%", width: "100%", textAlign: "initial" }}
-        ref={elementRef}
+        ref={refHandler}
         onFocus={onFocus}
         onBlur={onBlur}
       />
