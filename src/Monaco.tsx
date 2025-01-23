@@ -16,11 +16,13 @@ window["monaco"] = monaco;
 
 type EditorOptions = { options?: monaco.editor.IEditorOptions };
 type EditorProps = {
-  filename?: string;
   onChange?: (updated: string) => void;
   onFocus?: HTMLProps<HTMLInputElement>["onFocus"];
   onBlur?: HTMLProps<HTMLInputElement>["onBlur"];
   value?: string;
+  ref?:
+    | { current: monaco.editor.IEditor | null }
+    | ((editor: monaco.editor.IEditor | null) => void);
 };
 type ContainerProps = Omit<
   PropsWithRef<HTMLProps<HTMLDivElement>>,
@@ -34,31 +36,34 @@ export default function Monaco({
   onFocus,
   onBlur,
   value,
+  ref,
   ...props
 }: Props) {
-  const elementRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<monaco.editor.IEditor | null>(null);
+  const element = useRef<HTMLDivElement>(null);
+  const editor = useRef<monaco.editor.IEditor | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    controller.signal.addEventListener("abort", () => {
-      if (!editorRef.current) return;
-      editorRef.current.dispose();
-    });
+    if (typeof ref === "function") {
+      ref(editor.current);
+    } else if (typeof ref === "object" && "current" in ref) {
+      ref.current = editor.current;
+    }
+  }, [ref]);
 
-    if (elementRef.current) {
-      const el = elementRef.current;
+  useEffect(() => {
+    if (element.current) {
+      const el = element.current;
       const ed = monaco.editor.create(el, { ...options, value });
       const model = ed.getModel()!;
-      editorRef.current = ed;
 
+      editor.current = ed;
       model.onDidChangeContent(() => {
         const next = model.getValue();
         if (next !== value) onChange?.(next);
       });
     }
 
-    return () => controller.abort();
+    return () => editor.current?.dispose();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -68,7 +73,7 @@ export default function Monaco({
         role="textbox"
         id="editor"
         style={{ height: "100%", width: "100%", textAlign: "initial" }}
-        ref={elementRef}
+        ref={element}
         onFocus={onFocus}
         onBlur={onBlur}
       />
