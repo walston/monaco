@@ -1,16 +1,12 @@
 import Monaco from "./Monaco";
 import "./App.css";
-import { useMemo } from "react";
+import { useState } from "react";
 import * as monaco from "monaco-editor";
 
+const options = { readonly: true } as monaco.editor.IEditorOptions;
 function App() {
-  const options = useMemo(
-    () =>
-      ({
-        readonly: true,
-      } as monaco.editor.IEditorOptions),
-    []
-  );
+  const [lock, setLock] = useState(false);
+  const [text, setText] = useState("hello");
 
   return (
     <>
@@ -18,7 +14,34 @@ function App() {
         <header className="App-header">
           <h1>Monaco Editor</h1>
         </header>
-        <Monaco style={{ height: "500px", width: "800px" }} options={options} />
+        <div style={{ display: "flex", alignItems: "baseline" }}>
+          <input
+            id="lock"
+            type="checkbox"
+            checked={lock}
+            onChange={(e) => setLock(e.target.checked)}
+          />
+          <label
+            htmlFor="lock"
+            style={{ flexGrow: "1", textAlign: "left", padding: "5px" }}
+          >
+            Read only
+          </label>
+        </div>
+        {lock ? (
+          <textarea
+            style={{ height: "500px", width: "800px" }}
+            readOnly
+            value={text}
+          />
+        ) : (
+          <Monaco
+            style={{ height: "500px", width: "800px" }}
+            options={options}
+            value={text}
+            onChange={(update) => setText(update)}
+          />
+        )}
       </div>
     </>
   );

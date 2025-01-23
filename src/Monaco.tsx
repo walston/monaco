@@ -1,27 +1,77 @@
 import * as monaco from "monaco-editor";
 import { HTMLProps, PropsWithRef, useEffect, useRef } from "react";
 
-type ContainerProps = PropsWithRef<HTMLProps<HTMLDivElement>>;
+monaco.editor.createWebWorker({
+  moduleId: "monaco-web-worker",
+});
+
+// /*
+declare global {
+  interface Window {
+    monaco: typeof monaco;
+  }
+}
+window["monaco"] = monaco;
+// */
+
 type EditorOptions = { options?: monaco.editor.IEditorOptions };
-type EditorProps = Pick<HTMLProps<HTMLInputElement>, "onClick" | "value">;
+type EditorProps = {
+  filename?: string;
+  onChange?: (updated: string) => void;
+  onFocus?: HTMLProps<HTMLInputElement>["onFocus"];
+  onBlur?: HTMLProps<HTMLInputElement>["onBlur"];
+  value?: string;
+};
+type ContainerProps = Omit<
+  PropsWithRef<HTMLProps<HTMLDivElement>>,
+  keyof EditorProps
+>;
 
 type Props = ContainerProps & EditorOptions & EditorProps;
 
+type EditorRef =
+  | { editor: null; model: null }
+  | { editor: monaco.editor.IEditor; model: monaco.editor.IModel };
+
 export default function Monaco({
   options = {},
-  onClick,
+  onChange,
+  onFocus,
+  onBlur,
   value,
   ...props
 }: Props) {
-  const editor_id = useRef<string | null>(null);
+  const elementRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<EditorRef>({
+    editor: null,
+    model: null,
+  });
+
   useEffect(() => {
     const controller = new AbortController();
     controller.signal.addEventListener("abort", () => {
-      monaco.editor.getEditors().forEach((ed) => {
-        if (ed.getId() === editor_id.current) ed.dispose();
-      });
+      const { editor, model } = editorRef.current;
+      if (!editor) return;
+      editor.dispose();
+      model.dispose();
     });
-  }, [value, onClick]);
+
+    if (elementRef.current) {
+      const el = elementRef.current;
+      const ed = monaco.editor.create(el, { ...options, value });
+      const model = ed.getModel()!;
+      editorRef.current.editor = ed;
+      editorRef.current.model = model;
+
+      model.onDidChangeContent(() => {
+        const next = model.getValue();
+        if (next !== value) onChange?.(next);
+      });
+    }
+
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elementRef.current]);
 
   return (
     <div {...props}>
@@ -29,16 +79,9 @@ export default function Monaco({
         role="textbox"
         id="editor"
         style={{ height: "100%", width: "100%", textAlign: "initial" }}
-        ref={(el) => {
-          if (!el) {
-            monaco.editor.getEditors().forEach((editor) => {
-              if (editor.getId() === editor_id.current) editor.dispose();
-            });
-            return;
-          }
-          const ed = monaco.editor.create(el, options);
-          editor_id.current = ed.getId();
-        }}
+        ref={elementRef}
+        onFocus={onFocus}
+        onBlur={onBlur}
       />
     </div>
   );
