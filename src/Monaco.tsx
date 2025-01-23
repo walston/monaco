@@ -26,12 +26,7 @@ type ContainerProps = Omit<
   PropsWithRef<HTMLProps<HTMLDivElement>>,
   keyof EditorProps
 >;
-
 type Props = ContainerProps & EditorOptions & EditorProps;
-
-type EditorRef =
-  | { editor: null; model: null }
-  | { editor: monaco.editor.IEditor; model: monaco.editor.IModel };
 
 export default function Monaco({
   options = {},
@@ -42,26 +37,20 @@ export default function Monaco({
   ...props
 }: Props) {
   const elementRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<EditorRef>({
-    editor: null,
-    model: null,
-  });
+  const editorRef = useRef<monaco.editor.IEditor | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     controller.signal.addEventListener("abort", () => {
-      const { editor, model } = editorRef.current;
-      if (!editor) return;
-      editor.dispose();
-      model.dispose();
+      if (!editorRef.current) return;
+      editorRef.current.dispose();
     });
 
     if (elementRef.current) {
       const el = elementRef.current;
       const ed = monaco.editor.create(el, { ...options, value });
       const model = ed.getModel()!;
-      editorRef.current.editor = ed;
-      editorRef.current.model = model;
+      editorRef.current = ed;
 
       model.onDidChangeContent(() => {
         const next = model.getValue();
@@ -71,7 +60,7 @@ export default function Monaco({
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [elementRef.current]);
+  }, []);
 
   return (
     <div {...props}>
