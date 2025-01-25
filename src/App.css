@@ -5,6 +5,23 @@
   text-align: center;
 }
 
+.App {
+  display: grid;
+  grid-template-rows: 8rem auto;
+  grid-template-areas:
+    "header"
+    "main";
+}
+
+header {
+  grid-area: header;
+  text-align: left;
+}
+
+main {
+  grid-area: main;
+}
+
 .card {
   padding: 2em;
 }
