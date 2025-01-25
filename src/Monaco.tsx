@@ -59,19 +59,25 @@ export default function Monaco({
   }, [value]);
 
   useEffect(() => {
+    console.log("Monaco useEffect");
+    const cleanup: (() => void)[] = [];
     if (element.current) {
       const el = element.current;
       const ed = monaco.editor.create(el, { ...options, value });
       const model = ed.getModel()!;
+      const resizer = new ResizeObserver(() => ed.layout());
+      resizer.observe(el);
 
       editor.current = ed;
       model.onDidChangeContent(() => {
         const next = model.getValue();
         if (next !== value) onChange?.(next);
       });
+      cleanup.push(() => ed.dispose());
+      cleanup.push(() => resizer.disconnect());
     }
 
-    return () => editor.current?.dispose();
+    return () => cleanup.forEach((fn) => fn());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

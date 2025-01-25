@@ -12,7 +12,7 @@ function App() {
         style={{
           width: "100%",
           display: "grid",
-          gridTemplateColumns: "auto 12em",
+          gridTemplateColumns: "auto 24em",
           gridTemplateAreas: `"filler logs"`,
         }}
       >
